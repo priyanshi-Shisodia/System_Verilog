@@ -5,44 +5,43 @@
 `include "scoreboard.sv"
 
 class environment;
-  generator gen;
-  driver driv;
-  monitor rcv;
-  scoreboard sb;
-  mailbox gen2driv;
-  mailbox rcv2sb;
-  virtual fifo_if vif_ff;
-  function new(virtual fifo_if vif_ff);
-    this.vif_ff = vif_ff;
-  endfunction
-  
-  task build();
-    gen2driv = new();
-    rcv2sb = new();
-    gen =new(gen2driv);
-    driv = new(vif_ff,gen2driv);
-    rcv = new(vif_ff,rcv2sb);
-    sb=new(gen2driv,rcv2sb);
-  endtask
-  
-  task pre_test();
-    driv.reset();
-  endtask
-  task task();
-    fork
-      gen.main();
-      driv.main();
-      rcv.start();
-      sb.start();
-    join
-  endtask
-    
-    task run();
-      pre_test();
-      test();
-      $finish();
-    endtask
-    
+generator gen;
+driver drv;
+monitor mon;
+scoreboard sco;
+
+virtual counter_intf vif;
+
+mailbox gdmbx;
+mailbox msmbx;
+
+event gddone;
+
+function new(mailbox gdmbx, mailbox msmbx);
+this.gdmbx = gdmbx;
+this.msmbx = msmbx;
+
+gen = new(gdmbx);
+drv = new(gdmbx);
+
+mon = new(msmbx);
+sco = new(msmbx);
+endfunction
+
+task run();
+gen.done = gddone;
+drv.done = gddone;
+
+drv.vif = vif;
+mon.vif = vif;
+
+fork
+gen.run();
+drv.run();
+mon.run();
+sco.run();
+join_any
+endtask
 endclass
     
 
