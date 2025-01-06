@@ -1,26 +1,39 @@
-//test bench 
-`include "test.sv"
-`include "interface.sv"
-module tb_top();
-bit clk;
-  fifo_if inf(clk);
-  test t1(inf);
-  fifo dut(.wdata(inf.wdata),
-           .r_en(inf.r_en),
-           .w_en(inf.w_en),
-           .full(inf.full),
-           .empty(inf.empty),
-           .rdata(inf.rdata),
-           .clk(inf.clk),
-           .rst(inf .rst));
-  
-  initial begin 
-    clk=1;
-  end
-  
-  always #5 clk = ~clk;
-  initial begin
-    $dumpfile("dump.vcd");
-    $dumpvars;
-  end
-endmodule 
+module tb;
+environment env;
+counter_intf vif();
+mailbox gdmbx, msmbx;
+
+fifo dut (vif.clk, vif.rst, vif.wr, vif.din, vif.addr, vif.dout);
+
+always #5 vif.clk = ~vif.clk;
+
+initial begin
+vif.clk = 0;
+vif.rst = 1;
+vif.wr = 1;
+#50;
+vif.wr = 1;
+vif.rst = 0;
+#300;
+vif.wr = 0;
+#200;
+vif.rst = 0;
+#50;
+end
+
+initial begin
+gdmbx = new();
+msmbx = new();
+
+env = new(gdmbx, msmbx);
+env.vif = vif;
+env.run();
+#600;
+$finish;
+end
+
+initial begin
+$dumpvars;
+$dumpfile(“dump.vcd”);
+end
+endmodule
