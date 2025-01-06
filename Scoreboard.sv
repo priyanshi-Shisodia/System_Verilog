@@ -1,35 +1,40 @@
-class scoreboard;
-mailbox mbx;
-transaction tarr[256];
-transaction t;
+class environment;
+generator gen;
+driver drv;
+monitor mon;
+scoreboard sco;
 
-function new(mailbox mbx);
-this.mbx = mbx;
+virtual counter_intf vif;
+
+mailbox gdmbx;
+mailbox msmbx;
+
+event gddone;
+
+function new(mailbox gdmbx, mailbox msmbx);
+this.gdmbx = gdmbx;
+this.msmbx = msmbx;
+
+gen = new(gdmbx);
+drv = new(gdmbx);
+
+mon = new(msmbx);
+sco = new(msmbx);
 endfunction
 
 task run();
-forever begin
-mbx.get(t);
+gen.done = gddone;
+drv.done = gddone;
 
-if (t.wr == 1'b1) begin
-if (tarr[t.addr] == null) begin
-tarr[t.addr] = new();
-tarr[t.addr] = t;
-$display(“[SCO] : Data stored”);
-end
-end else begin
-if (tarr[t.addr] == null) begin
-if (t.dout == 0)
-$display(“[SCO] : Data read Test Passed”);
-else
-$display(“[SCO] : Data read Test Failed”);
-end else begin
-if (t.dout == tarr[t.addr].din)
-$display(“[SCO] : Data read Test Passed”);
-else
-$display(“[SCO] : Data read Test Failed”);
-end
-end
-end
+drv.vif = vif;
+mon.vif = vif;
+
+fork
+gen.run();
+drv.run();
+mon.run();
+sco.run();
+join_any
 endtask
 endclass
+
