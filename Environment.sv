@@ -1,4 +1,4 @@
-`include "transactor.sv"
+`include "transaction.sv"
 `include "generator.sv"
 `include "driver.sv"
 `include "monitor.sv"
