@@ -1,20 +1,20 @@
-//GENERATOR
 class generator;
-  //`include "transactor.sv"
-  rand transactor trans;
-  mailbox gen2driv;
-  int repeat_count;
-  int count;
-  function new(mailbox gen2driv);
-    this.gen2driv = gen2driv;
-  endfunction
-  
-  task main();
-    repeat(repeat_count)
-      begin
-        trans=new();
-        trans.randomize();
-        gen2driv.put(trans);
-      end
-  endtask
+mailbox mbx;
+transaction t;
+event done;
+integer i;
+
+function new(mailbox mbx);
+this.mbx = mbx;
+endfunction
+
+task run();
+t = new();
+for (i = 0; i < 100; i++) begin
+t.randomize();
+mbx.put(t);
+$display(“[GEN] : Data sent to driver”);
+@(done);
+end
+endtask
 endclass
